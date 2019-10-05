@@ -8,18 +8,27 @@ class Game {
     this.players = {};
     this.playerOrder = [];
     this.pile = [];
-    this.faceSuccession = false;
+    this.bottomcard = null;
+    this.burnedcards = 0;
+    this.changePlayer = false;
     this.fsPlayer = null;
+    this.war = 0;
   }
 
   addPlayer(username) {
-    if (this.isStarted || username.trim().length == 0 || this.players[username]) {
-      throw 'error';
+    console.log('username', username)
+    if (this.isStarted) {
+      throw NotStarted;
+    } else if (username.trim().length == 0) {
+      console.log('in here')
+      throw NotValid;
+    } else if (username == null) {
+      throw NoInput;
     }
 
     for (var id in this.players) {
       if (this.players[id].username == username) {
-        throw 'error'
+        throw AlreadyChosen
       }
     }
 
@@ -31,8 +40,10 @@ class Game {
   }
 
   startGame() {
-    if (this.isStarted || Object.keys(this.players).length < 2) {
-      throw 'error';
+    if (this.isStarted) {
+      throw `There's already a game going on!`;
+    } else if (Object.keys(this.players).length < 2) {
+      throw `You don't have enough players yet!`
     }
 
     this.isStarted = true;
@@ -77,7 +88,7 @@ class Game {
 
   nextPlayer() {
     if (!this.isStarted) {
-      throw 'error';
+      throw `Woah, hold on there! The game hasn't started yet!`;
     }
 
     var shifted = this.playerOrder.shift();
@@ -92,7 +103,7 @@ class Game {
 
   isWinning(playerId) {
     if (!this.isStarted) {
-      throw 'error';
+      throw `Woah, hold on there! The game hasn't started yet!`;
     }
 
     if (this.players[playerId].pile.length == 52) {
@@ -109,35 +120,109 @@ class Game {
   if fs is true, check to see what the new card is. if it is a face card, continue.
   If not, clear deck (using same logic as slap)
   */
+
+  setWar(card) {
+    console.log('in set war')
+    // this.fsPlayer = playerId;
+    if (card == 11) {
+      this.war = 1;
+    } else if (card == 12) {
+      this.war = 2;
+    } else if (card == 13) {
+      this.war = 3;
+    } else if (card == 1) {
+      this.war = 4;
+    }
+  }
+
   checkFace(playerId) {
-
-    if (this.faceSuccession) {
-
-      if (
+    console.log(this.war)
+    if (this.war > 0) {
+      if (this.war == 1) {
+        if (!(
+          this.pile[this.pile.length-1].value == 11 ||
+          this.pile[this.pile.length-1].value == 12 ||
+          this.pile[this.pile.length-1].value == 13 ||
+          this.pile[this.pile.length-1].value == 1
+        )) {
+          this.clearDeck(this.fsPlayer);
+          this.war = 0;
+          this.nextPlayer();
+          return {
+            winning: this.isWinning(this.fsPlayer),
+            message: 'got the pile!',
+            winner: this.fsPlayer
+          }
+        } else {
+          this.fsPlayer = playerId;
+          this.nextPlayer();
+          this.setWar(this.pile[this.pile.length-1].value);
+        }
+      } else {
+        if (!(
+          this.pile[this.pile.length-1].value == 11 ||
+          this.pile[this.pile.length-1].value == 12 ||
+          this.pile[this.pile.length-1].value == 13 ||
+          this.pile[this.pile.length-1].value == 1
+        )) {
+          this.war -= 1;
+        } else {
+          this.fsPlayer = playerId;
+          this.nextPlayer();
+          this.setWar(this.pile[this.pile.length-1].value);
+        }
+      }
+    } else {
+      if (!(
         this.pile[this.pile.length-1].value == 11 ||
         this.pile[this.pile.length-1].value == 12 ||
         this.pile[this.pile.length-1].value == 13 ||
         this.pile[this.pile.length-1].value == 1
-      ) {
-        this.fsPlayer = playerId;
+      )) {
+        console.log('glitch here?')
+        this.nextPlayer();
       } else {
-        this.clearDeck(this.fsPlayer);
-        this.faceSuccession = false;
-        return {
-          winning: this.isWinning(this.fsPlayer),
-          message: 'got the pile!',
-          winner: this.fsPlayer
-        }
+        console.log('seeing first face card')
+        this.fsPlayer = playerId;
+        console.log('after setting fsPlayer')
+        this.nextPlayer();
+        console.log('changing player')
+        this.setWar(this.pile[this.pile.length-1].value);
+        console.log('setting war', this.war)
       }
-    } else if (!this.faceSuccession && (
-      this.pile[this.pile.length-1].value == 11 ||
-      this.pile[this.pile.length-1].value == 12 ||
-      this.pile[this.pile.length-1].value == 13 ||
-      this.pile[this.pile.length-1].value == 1
-    )) {
-      this.faceSuccession = true;
-      this.fsPlayer = playerId;
     }
+
+    // if (this.changePlayer) {
+    //
+    //   if (
+    //     this.pile[this.pile.length-1].value == 11 ||
+    //     this.pile[this.pile.length-1].value == 12 ||
+    //     this.pile[this.pile.length-1].value == 13 ||
+    //     this.pile[this.pile.length-1].value == 1
+    //   ) {
+    //     this.fsPlayer = playerId;
+    //   } else {
+    //     this.clearDeck(this.fsPlayer);
+    //     this.changePlayer = false;
+    //     return {
+    //       winning: this.isWinning(this.fsPlayer),
+    //       message: 'got the pile!',
+    //       winner: this.fsPlayer
+    //     }
+    //   }
+    // } else {
+    //   this.changePlayer = true;
+    //   this.fsPlayer = playerId;
+    //   if (this.pile[this.pile.length-1].value == 11) {
+    //     this.war = 1;
+    //   } else if (this.pile[this.pile.length-1].value == 12) {
+    //     this.war = 2;
+    //   } else if (this.pile[this.pile.length-1].value == 13) {
+    //     this.war = 3;
+    //   } else if (this.pile[this.pile.length-1].value == 1) {
+    //     this.war = 4;
+    //   }
+    // }
 
     return {
       winning: false,
@@ -146,11 +231,20 @@ class Game {
   }
 
   playCard(playerId) {
-    if (!this.isStarted || this.playerOrder[0] != playerId || this.players[playerId].pile.length == 0) {
-      throw 'error';
+    if (!this.isStarted) {
+      throw `Woah, hold on there! The game hasn't started yet!`;
+    } else if (this.playerOrder[0] != playerId) {
+      throw 'error'
+    } else if (this.players[playerId].pile.length == 0) {
+      throw `You've got no more cards!`;
     }
 
-    this.pile.push(this.players[playerId].pile.pop());
+    if (this.bottomcard == null) {
+      this.bottomcard = this.players[playerId].pile.pop();
+      this.pile.push(this.bottomcard);
+    } else {
+      this.pile.push(this.players[playerId].pile.pop());
+    }
 
     var nocards = 0;
     for (var id in this.players) {
@@ -163,8 +257,6 @@ class Game {
       throw `It's a tie!`
     }
 
-    this.nextPlayer();
-
     return {
       card: this.pile[this.pile.length-1],
       cardString: this.pile[this.pile.length-1].toString()
@@ -174,16 +266,47 @@ class Game {
   //check wrapover
   slap(playerId) {
     if (!this.isStarted) {
-      throw 'error';
+      console.log('game isnt started')
+      throw `Woah, hold on there! The game hasn't started yet!`;
     }
+    console.log('1', ((this.pile.length - this.burnedcards) > 1 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-2].value))
+    console.log('2', ((this.pile.length - this.burnedcards) > 2 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-3].value))
+    console.log('3', ((this.pile.length - this.burnedcards) > 1 && this.bottomcard != this.pile[this.pile.length-1] && this.bottomcard.value == this.pile[this.pile.length-1].value))
+    console.log('4', ((this.pile.length - this.burnedcards) > 1 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-2].value) == 10))
+    console.log('5', ((this.pile.length - this.burnedcards) > 2 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-3].value) == 10))
+    console.log('6', ((this.pile.length - this.burnedcards) > 1 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-2].value) == 10))
+    console.log('7', ((this.pile.length - this.burnedcards) > 1 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-2].value) == 10))
+    console.log('8', ((this.pile.length - this.burnedcards) > 2 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-3].value) == 10))
+    console.log('9', ((this.pile.length - this.burnedcards) > 3 &&
+      (
+        (
+        this.pile[this.pile.length-1].value ==
+        this.pile[this.pile.length-2].value-1 ==
+        this.pile[this.pile.length-3].value-2 ==
+        this.pile[this.pile.length-4].value-3
+        )
+        ||
+        (
+        this.pile[this.pile.length-1].value ==
+        this.pile[this.pile.length-2].value+1 ==
+        this.pile[this.pile.length-3].value+2 ==
+        this.pile[this.pile.length-4].value+3
+        )
+      )
+    ))
+    console.log('10', (this.pile.length > 1 && (
+        (this.pile[this.pile.length-1].value == 12 && this.pile[this.pile.length-2].value == 13) ||
+        (this.pile[this.pile.length-1].value == 13 && this.pile[this.pile.length-2].value == 12)
+      )
+    ))
 
-    if (
-      (this.pile.length > 1 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-2].value) ||
-      (this.pile.length > 2 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-3].value) ||
-      (this.pile.length > 1 && this.pile[0].value == this.pile[this.pile.length-1].value) ||
-      (this.pile.length > 1 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-2].value) == 10) ||
-      (this.pile.length > 2 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-3].value) == 10) ||
-      (this.pile.length > 3 &&
+    console.log('missing somethin', (
+      ((this.pile.length - this.burnedcards) > 1 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-2].value) ||
+      ((this.pile.length - this.burnedcards) > 2 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-3].value) ||
+      ((this.pile.length - this.burnedcards) > 1 && this.bottomcard != this.pile[this.pile.length-1] && this.bottomcard.value == this.pile[this.pile.length-1].value) ||
+      ((this.pile.length - this.burnedcards) > 1 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-2].value) == 10) ||
+      ((this.pile.length - this.burnedcards) > 2 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-3].value) == 10) ||
+      ((this.pile.length - this.burnedcards) > 3 &&
         (
           (
           this.pile[this.pile.length-1].value ==
@@ -200,15 +323,47 @@ class Game {
           )
         )
       ) ||
-      (this.pile.length > 1 && (
+      ((this.pile.length - this.burnedcards) > 1 && (
+          (this.pile[this.pile.length-1].value == 12 && this.pile[this.pile.length-2].value == 13) ||
+          (this.pile[this.pile.length-1].value == 13 && this.pile[this.pile.length-2].value == 12)
+        )
+      )
+    ))
+
+    if (
+      ((this.pile.length - this.burnedcards) > 1 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-2].value) ||
+      ((this.pile.length - this.burnedcards) > 2 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-3].value) ||
+      ((this.pile.length - this.burnedcards) > 1 && this.bottomcard != this.pile[this.pile.length-1] && this.bottomcard.value == this.pile[this.pile.length-1].value) ||
+      ((this.pile.length - this.burnedcards) > 1 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-2].value) == 10) ||
+      ((this.pile.length - this.burnedcards) > 2 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-3].value) == 10) ||
+      ((this.pile.length - this.burnedcards) > 3 &&
+        (
+          (
+          this.pile[this.pile.length-1].value ==
+          this.pile[this.pile.length-2].value-1 ==
+          this.pile[this.pile.length-3].value-2 ==
+          this.pile[this.pile.length-4].value-3
+          )
+          ||
+          (
+          this.pile[this.pile.length-1].value ==
+          this.pile[this.pile.length-2].value+1 ==
+          this.pile[this.pile.length-3].value+2 ==
+          this.pile[this.pile.length-4].value+3
+          )
+        )
+      ) ||
+      ((this.pile.length - this.burnedcards) > 1 && (
           (this.pile[this.pile.length-1].value == 12 && this.pile[this.pile.length-2].value == 13) ||
           (this.pile[this.pile.length-1].value == 13 && this.pile[this.pile.length-2].value == 12)
         )
       )
     )
     {
+      console.log('clear condition')
 
       this.clearDeck(playerId);
+      this.war = 0;
 
       return {
         winning: this.isWinning(playerId),
@@ -218,6 +373,7 @@ class Game {
 
     for (let i = 0; i < Math.min(2, this.players[playerId].pile.length); i++) {
       this.pile.unshift(this.players[playerId].pile.pop());
+      this.burnedcards += 2;
     }
 
     return {
@@ -229,6 +385,15 @@ class Game {
   clearDeck(playerId) {
     this.players[playerId].pile = [...this.pile, ...this.players[playerId].pile];
     this.pile = [];
+    this.burnedcards = 0;
+    this.bottomcard = null;
+  }
+
+  isEmpty() {
+    if (this.pile.length == 0) {
+      return true;
+    }
+    return false;
   }
 
   fromObject(object) {

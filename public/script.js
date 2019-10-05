@@ -55,12 +55,23 @@ $(document).ready(function() {
 
   socket.on('message', function(data) {
     // YOUR CODE HERE
-    $("message-container").append(data).fadeOut(5000);
+    console.log('in message')
+    $("#messages-container").append('<div id="message">'+data+'</div>');
+
+    setTimeout(function(){
+
+        $("#message").remove();
+    }, 2000);
   });
 
   socket.on('clearDeck', function(){
     // YOUR CODE HERE
-    document.addElementById("card").src="";
+    console.log('here in clearDeck');
+    setTimeout(function(){
+
+        document.getElementById("card").src=``;
+    }, 500);
+
   });
 
   socket.on("updateGame", function(gameState) {
@@ -128,6 +139,7 @@ $(document).ready(function() {
   $('#startGame').on('click', function(e) {
     e.preventDefault();
     // YOUR CODE HERE
+    console.log('after pd')
 
     socket.emit('start');
   });
@@ -150,6 +162,7 @@ $(document).ready(function() {
   $('#playCard').on('click', function(e) {
     e.preventDefault();
     // YOUR CODE HERE
+    console.log('here')
     socket.emit('playCard');
   });
 

@@ -82,7 +82,7 @@ io.on('connection', function(socket) {
 
   socket.on('username', function(data) {
     if (winner) {
-      socket.emit('errorMessage', `${winner} has won the game. Restart the server to start a new game.`);
+      socket.emit('errorMessage', `${winner} has won the game. Refresh all windows to start a new game.`);
       return;
     }
     // YOUR CODE HERE
@@ -92,14 +92,24 @@ io.on('connection', function(socket) {
       io.emit('updateGame', getGameState());
     }
     catch(e) {
-      socket.emit('errorMessage', e.message);
+      console.log('at username error', e.message)
+      if (e.message == 'NotStarted is not defined') {
+        socket.emit('errorMessage', `Game hasn't started yet!`);
+      } else if (e.message == 'NotValid is not defined') {
+        socket.emit('errorMessage', `This name isn't valid :/`);
+      } else if (e.message == 'NoInput is not defined') {
+      } else if (e.message == 'AlreadyChosen is not defined') {
+        socket.emit('errorMessage', 'This name has already been chosen. Choose another!');
+      }
+
+
     }
 
   });
 
   socket.on('start', function() {
     if (winner) {
-      socket.emit('errorMessage', `${winner} has won the game. Restart the server to start a new game.`);
+      socket.emit('errorMessage', `${winner} has won the game. Refresh all windows to start a new game.`);
       return;
     }
     // YOUR CODE HERE
@@ -111,7 +121,7 @@ io.on('connection', function(socket) {
 
       }
       catch (e) {
-        socket.emit('errorMessage', e.message);
+        socket.emit('errorMessage', 'You need more players to start!');
       }
     } else {
       socket.emit('errorMessage', 'You are not a player of the game!')
@@ -120,21 +130,34 @@ io.on('connection', function(socket) {
 
   socket.on('playCard', function() {
     if (winner) {
-      socket.emit('errorMessage', `${winner} has won the game. Restart the server to start a new game.`);
+      socket.emit('errorMessage', `${winner} has won the game. Refresh all windows to start a new game.`);
       return;
     }
     // YOUR CODE HERE
     if (socket.playerId) {
       try {
+        console.log('in app playCard')
         var event = game.playCard(socket.playerId);
         io.emit('playCard', event);
+        console.log('after emit playCard')
         var event2 = game.checkFace(socket.playerId);
+        console.log('after checkface', event2);
         if (event2.winning == true) {
           winner = game.players[event2.winner].username;
         }
+        if (event2.winner) {
+          console.log('here before clearDeck')
+          socket.emit('message', `${game.players[event2.winner].username} won the pile!`)
+          io.emit('clearDeck');
+          // io.emit('updateGame', getGameState());
+          console.log('right after clearDeck')
+          socket.broadcast.emit('message', `${game.players[event2.winner].username} won the pile!`)
+        }
+        io.emit('updateGame', getGameState());
+
       }
       catch(e) {
-        socket.emit('errorMessage', e.message);
+        socket.emit('errorMessage', 'Wait your turn!');
       }
     } else {
       socket.emit('errorMessage', 'You are not the player of the game!')
@@ -142,16 +165,22 @@ io.on('connection', function(socket) {
 
     // YOUR CODE ENDS HERE
     // broadcast to everyone the game state
-    io.emit('updateGame', getGameState());
+
   });
 
   socket.on('slap', function() {
     if (winner) {
-      socket.emit('errorMessage', `${winner} has won the game. Restart the server to start a new game.`);
+      socket.emit('errorMessage', `${winner} has won the game. Refresh all windows to start a new game.`);
       return;
     }
     // YOUR CODE HERE
-    if (socket.playerId) {
+    // var count = 0;
+    // for (var number in this.numCards) {
+    //   count++;
+    // }
+    // console.log(this.numCards, count)
+
+    if (!game.isEmpty() && socket.playerId) {
       try {
         var event = game.slap(socket.playerId);
         if (event.winning == true) {
@@ -159,7 +188,10 @@ io.on('connection', function(socket) {
         }
 
         if (event.message == 'got the pile!') {
+          socket.emit('message', 'You won the pile!')
           io.emit('clearDeck');
+        } else {
+          socket.emit('message', 'You lost 2 cards!')
         }
 
         if (game.players[socket.playerId].pile.length == 0) {
@@ -180,15 +212,16 @@ io.on('connection', function(socket) {
         }
 
         io.emit('updateGame', getGameState());
-        socket.emit('message', 'You lost 3 cards!')
         socket.broadcast.emit('message', `${game.players[socket.playerId].username} ${event.message}`)
+
       }
       catch(e) {
-        socket.emit('errorMessage', e.message);
+        socket.emit('errorMessage', 'Wait your turn!');
       }
-    } else {
-      socket.emit('errorMessage', e.message);
     }
+    // else {
+    //   socket.emit('errorMessage', '')
+    // }
   });
 
 });
