@@ -31,29 +31,19 @@ var Card = require('./card');
 var Player = require('./player');
 var Game = require('./game');
 var game = new Game();
-var count = 0; // Number of active socket connections
-var winner = null; // Username of winner
+var count = 0;
+var winner = null;
 
 function getGameState() {
   var currentPlayerUsername;
   var players = [];
   var numCards = {};
 
-  // YOUR CODE HERE
-  /*
-  isStarted: A boolean value indicating if the game has already started
-  numCards: an Object with the keys as playerIds and the value as the number of Cards
-  currentPlayerUsername: the username of the current player's name. If the game has not started yet, return Game has not started yet as the currentPlayerUsername
-  playersInGame: A string with the name of all the players in the game (e.g. Ricky, Moose, Abhi, Darwish)
-  cardsInDeck: How many cards are in the current pile
-  win: the name of the winner if it exists, otherwise, undefined (see winner)
-  */
   for (var id in game.players) {
     numCards[id] = game.players[id].pile.length;
     players.push(game.players[id].username);
   }
 
-  // return an object with 6 different properties
   return {
     isStarted: game.isStarted,
     numCards: numCards,
@@ -67,8 +57,6 @@ function getGameState() {
 io.on('connection', function(socket) {
 
   if (game.isStarted) {
-    // whenever a player joins an already started game, he or she becomes
-    // an observer automatically
     socket.emit('observeOnly');
   }
   count++;
@@ -85,7 +73,7 @@ io.on('connection', function(socket) {
       socket.emit('errorMessage', `${winner} has won the game. Refresh all windows to start a new game.`);
       return;
     }
-    // YOUR CODE HERE
+
     try {
       socket.playerId = game.addPlayer(data);
       socket.emit('username', {id: socket.playerId, username: data})
@@ -100,10 +88,7 @@ io.on('connection', function(socket) {
       } else if (e.message == 'AlreadyChosen is not defined') {
         socket.emit('errorMessage', 'This name has already been chosen. Choose another!');
       }
-
-
     }
-
   });
 
   socket.on('start', function() {
@@ -111,13 +96,12 @@ io.on('connection', function(socket) {
       socket.emit('errorMessage', `${winner} has won the game. Refresh all windows to start a new game.`);
       return;
     }
-    // YOUR CODE HERE
+
     if (socket.playerId) {
       try {
         game.startGame();
         io.emit('start');
         io.emit('updateGame', getGameState());
-
       }
       catch (e) {
         socket.emit('errorMessage', 'You need more players to start!');
@@ -132,7 +116,6 @@ io.on('connection', function(socket) {
       socket.emit('errorMessage', `${winner} has won the game. Refresh all windows to start a new game.`);
       return;
     }
-    // YOUR CODE HERE
     if (socket.playerId) {
       try {
         var event = game.playCard(socket.playerId);
@@ -149,11 +132,9 @@ io.on('connection', function(socket) {
         if (event2.winner) {
           socket.emit('message', `${game.players[event2.winner].username} won the pile!`)
           io.emit('clearDeck');
-          // io.emit('updateGame', getGameState());
           socket.broadcast.emit('message', `${game.players[event2.winner].username} won the pile!`)
         }
         io.emit('updateGame', getGameState());
-
       }
       catch(e) {
         socket.emit('errorMessage', 'Wait your turn!');
@@ -161,10 +142,6 @@ io.on('connection', function(socket) {
     } else {
       socket.emit('errorMessage', 'You are not the player of the game!')
     }
-
-    // YOUR CODE ENDS HERE
-    // broadcast to everyone the game state
-
   });
 
   socket.on('slap', function() {
@@ -199,34 +176,14 @@ io.on('connection', function(socket) {
           }
           socket.emit('message', 'You lost 2 cards!')
         }
-
-        // if (game.players[socket.playerId].pile.length == 0) {
-        //   var count = [0, null];
-        //   for (let i = 0; i < game.playerOrder.length; i++) {
-        //     if (game.players[game.playerOrder[i]].pile.length == 0) {
-        //       count[0]++;
-        //     } else {
-        //       count[1] = game.players[game.playerOrder[i]].username;
-        //     }
-        //   }
-        //
-        //   if (count[0] == game.playerOrder.length-1) {
-        //     winner = count[1]
-        //   } else {
-        //     game.nextPlayer();
-        //   }
-        // }
-
         io.emit('updateGame', getGameState());
         socket.broadcast.emit('message', `${game.players[socket.playerId].username} ${event.message}`)
-
       }
       catch(e) {
         socket.emit('errorMessage', 'Wait your turn!');
       }
     }
   });
-
 });
 
 var port = process.env.PORT || 3000;
