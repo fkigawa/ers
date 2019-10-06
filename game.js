@@ -13,14 +13,13 @@ class Game {
     this.changePlayer = false;
     this.fsPlayer = null;
     this.war = 0;
+    this.strikes = {};
   }
 
   addPlayer(username) {
-    console.log('username', username)
     if (this.isStarted) {
       throw NotStarted;
     } else if (username.trim().length == 0) {
-      console.log('in here')
       throw NotValid;
     } else if (username == null) {
       throw NoInput;
@@ -86,6 +85,17 @@ class Game {
 
   }
 
+  slappedToEmpty(slapper) {
+    console.log(this.playerOrder, slapper, this.playerOrder[0] == slapper);
+    if (this.playerOrder[0] == slapper) {
+      console.log(this.playerOrder, slapper);
+      console.log('before switching players');
+      this.nextPlayer();
+      return true;
+    }
+    return false;
+  }
+
   nextPlayer() {
     if (!this.isStarted) {
       throw `Woah, hold on there! The game hasn't started yet!`;
@@ -122,7 +132,6 @@ class Game {
   */
 
   setWar(card) {
-    console.log('in set war')
     // this.fsPlayer = playerId;
     if (card == 11) {
       this.war = 1;
@@ -136,7 +145,6 @@ class Game {
   }
 
   checkFace(playerId) {
-    console.log(this.war)
     if (this.war > 0) {
       if (this.war == 1) {
         if (!(
@@ -179,16 +187,11 @@ class Game {
         this.pile[this.pile.length-1].value == 13 ||
         this.pile[this.pile.length-1].value == 1
       )) {
-        console.log('glitch here?')
         this.nextPlayer();
       } else {
-        console.log('seeing first face card')
         this.fsPlayer = playerId;
-        console.log('after setting fsPlayer')
         this.nextPlayer();
-        console.log('changing player')
         this.setWar(this.pile[this.pile.length-1].value);
-        console.log('setting war', this.war)
       }
     }
 
@@ -246,6 +249,10 @@ class Game {
       this.pile.push(this.players[playerId].pile.pop());
     }
 
+    if (this.players[playerId].pile.length == 0) {
+      this.nextPlayer();
+    }
+
     var nocards = 0;
     for (var id in this.players) {
       if (this.players[id].pile.length == 0) {
@@ -255,6 +262,11 @@ class Game {
     if (nocards == this.playerOrder.length) {
       this.isStarted = false;
       throw `It's a tie!`
+    } else if (nocards == this.playerOrder.length-1) {
+      return {
+        card: 'end game',
+        cardString: this.fsPlayer
+      }
     }
 
     return {
@@ -263,21 +275,26 @@ class Game {
     }
   }
 
+  findLastStanding() {
+    for (var id in this.players) {
+      if (this.players[id].pile.length != 0) {
+        return this.players[id].username
+      }
+    }
+  }
   //check wrapover
   slap(playerId) {
     if (!this.isStarted) {
       console.log('game isnt started')
       throw `Woah, hold on there! The game hasn't started yet!`;
     }
-    console.log('1', ((this.pile.length - this.burnedcards) > 1 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-2].value))
-    console.log('2', ((this.pile.length - this.burnedcards) > 2 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-3].value))
-    console.log('3', ((this.pile.length - this.burnedcards) > 1 && this.bottomcard != this.pile[this.pile.length-1] && this.bottomcard.value == this.pile[this.pile.length-1].value))
-    console.log('4', ((this.pile.length - this.burnedcards) > 1 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-2].value) == 10))
-    console.log('5', ((this.pile.length - this.burnedcards) > 2 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-3].value) == 10))
-    console.log('6', ((this.pile.length - this.burnedcards) > 1 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-2].value) == 10))
-    console.log('7', ((this.pile.length - this.burnedcards) > 1 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-2].value) == 10))
-    console.log('8', ((this.pile.length - this.burnedcards) > 2 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-3].value) == 10))
-    console.log('9', ((this.pile.length - this.burnedcards) > 3 &&
+    console.log('these are the cards:', this.pile)
+    console.log('1', (this.pile.length - this.burnedcards) > 1 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-2].value);
+    console.log('2', (this.pile.length - this.burnedcards) > 2 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-3].value);
+    console.log('3', (this.pile.length - this.burnedcards) > 1 && this.bottomcard != this.pile[this.pile.length-1] && this.bottomcard.value == this.pile[this.pile.length-1].value);
+    console.log('4', (this.pile.length - this.burnedcards) > 1 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-2].value) == 10)
+    console.log('5', (this.pile.length - this.burnedcards) > 2 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-3].value) == 10)
+    console.log('6', ((this.pile.length - this.burnedcards) > 3 &&
       (
         (
         this.pile[this.pile.length-1].value ==
@@ -293,42 +310,13 @@ class Game {
         this.pile[this.pile.length-4].value+3
         )
       )
-    ))
-    console.log('10', (this.pile.length > 1 && (
+    ));
+    console.log('7', ((this.pile.length - this.burnedcards) > 1 && (
         (this.pile[this.pile.length-1].value == 12 && this.pile[this.pile.length-2].value == 13) ||
         (this.pile[this.pile.length-1].value == 13 && this.pile[this.pile.length-2].value == 12)
       )
-    ))
+    ));
 
-    console.log('missing somethin', (
-      ((this.pile.length - this.burnedcards) > 1 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-2].value) ||
-      ((this.pile.length - this.burnedcards) > 2 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-3].value) ||
-      ((this.pile.length - this.burnedcards) > 1 && this.bottomcard != this.pile[this.pile.length-1] && this.bottomcard.value == this.pile[this.pile.length-1].value) ||
-      ((this.pile.length - this.burnedcards) > 1 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-2].value) == 10) ||
-      ((this.pile.length - this.burnedcards) > 2 && (this.pile[this.pile.length-1].value + this.pile[this.pile.length-3].value) == 10) ||
-      ((this.pile.length - this.burnedcards) > 3 &&
-        (
-          (
-          this.pile[this.pile.length-1].value ==
-          this.pile[this.pile.length-2].value-1 ==
-          this.pile[this.pile.length-3].value-2 ==
-          this.pile[this.pile.length-4].value-3
-          )
-          ||
-          (
-          this.pile[this.pile.length-1].value ==
-          this.pile[this.pile.length-2].value+1 ==
-          this.pile[this.pile.length-3].value+2 ==
-          this.pile[this.pile.length-4].value+3
-          )
-        )
-      ) ||
-      ((this.pile.length - this.burnedcards) > 1 && (
-          (this.pile[this.pile.length-1].value == 12 && this.pile[this.pile.length-2].value == 13) ||
-          (this.pile[this.pile.length-1].value == 13 && this.pile[this.pile.length-2].value == 12)
-        )
-      )
-    ))
 
     if (
       ((this.pile.length - this.burnedcards) > 1 && this.pile[this.pile.length-1].value == this.pile[this.pile.length-2].value) ||
@@ -360,10 +348,11 @@ class Game {
       )
     )
     {
-      console.log('clear condition')
-
+      console.log('slap worked');
       this.clearDeck(playerId);
       this.war = 0;
+
+      //check to see if all other players have 0 cards--then return statement with the player that has more than 0
 
       return {
         winning: this.isWinning(playerId),
@@ -374,6 +363,25 @@ class Game {
     for (let i = 0; i < Math.min(2, this.players[playerId].pile.length); i++) {
       this.pile.unshift(this.players[playerId].pile.pop());
       this.burnedcards += 2;
+    }
+
+    var nocards = 0;
+    for (var id in this.players) {
+      if (this.players[id].pile.length == 0) {
+        nocards++;
+      }
+    }
+    if (nocards == this.playerOrder.length) {
+      return {
+        winning: true,
+        message: 'tie'
+      }
+    } else if (nocards == this.playerOrder.length-1) {
+      var laststanding = this.findLastStanding();
+      return {
+        winning: 'take name',
+        message: laststanding
+      }
     }
 
     return {

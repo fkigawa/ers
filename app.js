@@ -92,7 +92,6 @@ io.on('connection', function(socket) {
       io.emit('updateGame', getGameState());
     }
     catch(e) {
-      console.log('at username error', e.message)
       if (e.message == 'NotStarted is not defined') {
         socket.emit('errorMessage', `Game hasn't started yet!`);
       } else if (e.message == 'NotValid is not defined') {
@@ -136,21 +135,21 @@ io.on('connection', function(socket) {
     // YOUR CODE HERE
     if (socket.playerId) {
       try {
-        console.log('in app playCard')
         var event = game.playCard(socket.playerId);
+        if (event.card == 'end game') {
+          winner = game.players[event.cardString].username;
+          io.emit('updateGame', getGameState());
+          return;
+        }
         io.emit('playCard', event);
-        console.log('after emit playCard')
         var event2 = game.checkFace(socket.playerId);
-        console.log('after checkface', event2);
         if (event2.winning == true) {
           winner = game.players[event2.winner].username;
         }
         if (event2.winner) {
-          console.log('here before clearDeck')
           socket.emit('message', `${game.players[event2.winner].username} won the pile!`)
           io.emit('clearDeck');
           // io.emit('updateGame', getGameState());
-          console.log('right after clearDeck')
           socket.broadcast.emit('message', `${game.players[event2.winner].username} won the pile!`)
         }
         io.emit('updateGame', getGameState());
@@ -173,43 +172,50 @@ io.on('connection', function(socket) {
       socket.emit('errorMessage', `${winner} has won the game. Refresh all windows to start a new game.`);
       return;
     }
-    // YOUR CODE HERE
-    // var count = 0;
-    // for (var number in this.numCards) {
-    //   count++;
-    // }
-    // console.log(this.numCards, count)
 
     if (!game.isEmpty() && socket.playerId) {
       try {
         var event = game.slap(socket.playerId);
         if (event.winning == true) {
+          if (event.message == 'tie') {
+            throw `It's a tie!`
+          }
           winner = game.players[socket.playerId].username;
+          io.emit('updateGame', getGameState());
+          return;
+        }
+        if (event.winning == 'take name') {
+          winner = event.message;
+          io.emit('updateGame', getGameState());
+          return;
         }
 
         if (event.message == 'got the pile!') {
           socket.emit('message', 'You won the pile!')
           io.emit('clearDeck');
         } else {
+          if (game.players[socket.playerId].pile.length == 0) {
+            game.slappedToEmpty(socket.playerId);
+          }
           socket.emit('message', 'You lost 2 cards!')
         }
 
-        if (game.players[socket.playerId].pile.length == 0) {
-          var count = [0, null];
-          for (let i = 0; i < game.playerOrder.length; i++) {
-            if (game.players[game.playerOrder[i]].pile.length == 0) {
-              count[0]++;
-            } else {
-              count[1] = game.players[game.playerOrder[i]].username;
-            }
-          }
-
-          if (count[0] == 1) {
-            winner = count[1]
-          } else {
-            game.nextPlayer();
-          }
-        }
+        // if (game.players[socket.playerId].pile.length == 0) {
+        //   var count = [0, null];
+        //   for (let i = 0; i < game.playerOrder.length; i++) {
+        //     if (game.players[game.playerOrder[i]].pile.length == 0) {
+        //       count[0]++;
+        //     } else {
+        //       count[1] = game.players[game.playerOrder[i]].username;
+        //     }
+        //   }
+        //
+        //   if (count[0] == game.playerOrder.length-1) {
+        //     winner = count[1]
+        //   } else {
+        //     game.nextPlayer();
+        //   }
+        // }
 
         io.emit('updateGame', getGameState());
         socket.broadcast.emit('message', `${game.players[socket.playerId].username} ${event.message}`)
@@ -219,9 +225,6 @@ io.on('connection', function(socket) {
         socket.emit('errorMessage', 'Wait your turn!');
       }
     }
-    // else {
-    //   socket.emit('errorMessage', '')
-    // }
   });
 
 });
