@@ -1,18 +1,18 @@
-INSTRUCTIONS FOR RUNNING
-Simple way:
+INSTRUCTIONS FOR RUNNING <br />
+Simple way: <br />
 All players follow this heroku link: https://boiling-tor-31925.herokuapp.com/
-Start playing!
-(note: to start a new game, all players need to fresh their browser).
+Start playing! <br />
+(note: to start a new game, all players need to refresh their browser).
 
-Code-y way:
+Code-y way: <br />
 Run the following command lines in your terminal:
 ```
 git clone https://github.com/fkigawa/ers.git
 npm install --save
 npm start
 ```
-All players open up http://localhost:3000/
-Start Playing!
+All players open up http://localhost:3000/ <br />
+Start Playing! <br />
 (note: to start a new game, the server in your terminal needs to be restarted)
 
 RULES OF EGYPTIAN RAT SCREW
