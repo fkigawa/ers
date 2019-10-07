@@ -6,7 +6,6 @@ Start playing! <br />
 (note: to start a new game, all players need to refresh their browser).
 
 Code-y way: <br />
-<br />
 Run the following command lines in your terminal:
 ```
 git clone https://github.com/fkigawa/ers.git
@@ -74,7 +73,7 @@ The player, who has all of the cards at the end of the game, wins.
 
 DESIGN CHOICES<br />
 <br />
-I structured the card game by beginning with create-react-app, which streamlines the app building process, and by using full-stack Javascript, which is a stack designed to build up apps. I decided to modularize the card creation, player creation, game creation/rules, the server, and the client. With the card and player creation, it's because they're pretty simple and don't need to be changed while editing game rules. The game creation/rules was probably the most time intensive part of the challenge, because there were so many rules I had to account for. And the client and server interacted frequently with each other, so separating them made it easier to spot bugs and build out the game.
+I structured the card game by beginning with create-react-app, which streamlines the app building process. I used full-stack Javascript, which is a stack designed to build up apps. I decided to modularize the card creation, player creation, game creation/rules, the server, and the client. I modularized the card and player creation, because they're pretty simple and don't need to be changed while editing game rules. The game creation/rules was probably the most time intensive part of the challenge, because there were so many rules I had to account for. And the client and server interacted frequently with each other, so separating them made it easier to spot bugs and build out the game.
 
 Data structures that I used were mostly arrays and hashes, depending on the use case. For creating the player order, an array worked fine. For storing all the information within each player, I needed to use a hash. I used Player and Card objects to store the necessary information within each. Algorithms that I used were guided by the card game's logic; I used for-loops and lots and lots of check conditions. Card games are condition intensive, which makes edge casing essential.
 
@@ -82,8 +81,8 @@ TOOLING<br />
 <br />
 Probably the most important tool I used was socket.io. It makes calls between the players of the game really simple, and also accounts for multiple different players all within the same game. The high-level understanding of socket.io, in my case, is: A player clicks a button, which causes the client to send a call to the server. The server completes a series of steps depending on the button clicked. The server sends a call back to the client with instructions to change the game's interface. The server is run on the Express.js framework, which is a popular framework when building apps with Javascript.
 
-I used Bootstraps.js for streamlining the design of the app. I wanted to focus on the logic of the card game more than the design.
+I used Bootstrap.js for streamlining the design of the app. I didn't put too much work into the design, because I wanted to focus on the logic of the card game.
 
-I used heroku to launch the card game on the browser, so that it's easily accessible to anyone at any time. I'm honestly a big fan of heroku.
+I used heroku to launch the card game onto the web browser, so that it's easily accessible to anyone at any time. I'm honestly a big fan of heroku.
 
 I spent way more time than recommended on this game (yike!), but I did enjoy building it. I hope you enjoy playing it!
